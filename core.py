@@ -1,6 +1,3 @@
-from concurrent.futures import thread
-from turtle import down
-from itsdangerous import exc
 import pandas as pd
 import requests
 import datetime
@@ -78,3 +75,9 @@ def get_totals(df : pd.DataFrame):
     total_deaths = df.iloc[0]['total_deaths']
     total_cases = df.iloc[0]['total_cases']
     return [total_cases, total_deaths]
+
+def get_new(df : pd.DataFrame):
+    df = df.sort_values(by='date', ascending=False)
+    new_deaths = df.iloc[0]['new_deaths']
+    new_cases = df.iloc[0]['new_cases']
+    return [new_cases, new_deaths]
