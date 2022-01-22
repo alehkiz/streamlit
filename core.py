@@ -28,22 +28,6 @@ def get_file():
     df = df[df['location'] == 'Brazil']
     df.reset_index(inplace=True, drop=True)
     df['date'] = pd.to_datetime(df.date, format='%Y-%m-%d')
-    print(file_folder+file_name)
-    df.to_csv(file_folder+file_name)
-    files = [_ for _ in listdir(path='./files/') if not file_name in _]
-    # if len(files) > 1:
-    #     for file in files:
-    #         remove_file(f'./files/{file}')
-
-
-def get_dataframe():
-    global th
-    if not isfile(current_file):
-        th = threading.Thread(target=get_file, name='Downloader')
-        th.start()
-    file = file_folder + listdir(path=file_folder)[0]
-    df = pd.read_csv(file)
-    df.sort_values(by=['date'], inplace=True, ascending=True)
     df.drop(columns=['new_deaths_smoothed', 'total_cases_per_million',
        'new_cases_per_million', 'new_cases_smoothed_per_million',
        'total_deaths_per_million', 'new_deaths_per_million',
@@ -69,8 +53,26 @@ def get_dataframe():
        'life_expectancy', 'human_development_index',
        'excess_mortality_cumulative_absolute', 'excess_mortality_cumulative',
        'excess_mortality', 'excess_mortality_cumulative_per_million'], inplace=True)
-    return df
+    df.to_csv(file_folder+file_name, index=False)
+    files = [_ for _ in listdir(path='./files/') if not file_name in _]
+    if len(files) > 1:
+        for file in files:
+            remove_file(f'./files/{file}')
 
+
+def get_dataframe():
+    global th
+    if not isfile(current_file):
+        th = threading.Thread(target=get_file, name='Downloader')
+        th.start()
+    if len(listdir(path=file_folder)) == 0:
+        return False
+    file = file_folder + listdir(path=file_folder)[0]
+    df = pd.read_csv(file)
+    df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
+    df.sort_values(by=['date'], inplace=True, ascending=True)
+    
+    return df
 def get_totals(df : pd.DataFrame):
     df = df.sort_values(by='date', ascending=False)
     total_deaths = df.iloc[0]['total_deaths']
