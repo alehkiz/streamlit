@@ -22,8 +22,9 @@ def get_file():
     if rq.status_code != 200:
         raise Exception('Não foi possível acessar o arquivo')
     df = pd.read_csv(StringIO(rq.text))
-    df = df[df['location'] == 'Brazil']
     df.reset_index(inplace=True, drop=True)
+    df = df[df['location'] != 'World']
+    df = df[~df['continent'].isna()]
     df['date'] = pd.to_datetime(df.date, format='%Y-%m-%d')
     df.drop(columns=['new_deaths_smoothed', 'total_cases_per_million',
        'new_cases_per_million', 'new_cases_smoothed_per_million',
@@ -70,14 +71,15 @@ def get_dataframe():
     df.sort_values(by=['date'], inplace=True, ascending=True)
     
     return df
-def get_totals(df : pd.DataFrame):
+def get_totals(df : pd.DataFrame, date):
+       
     df = df.sort_values(by='date', ascending=False)
-    total_deaths = df.iloc[0]['total_deaths']
-    total_cases = df.iloc[0]['total_cases']
+    total_deaths = df[df['date'] == date]['total_deaths'].sum()
+    total_cases = df[df['date'] == date]['total_cases'].sum()
     return [total_cases, total_deaths]
 
-def get_new(df : pd.DataFrame):
+def get_new(df : pd.DataFrame, date):
     df = df.sort_values(by='date', ascending=False)
-    new_deaths = df.iloc[0]['new_deaths']
-    new_cases = df.iloc[0]['new_cases']
+    new_deaths = df[df['date'] == date]['new_deaths'].sum()
+    new_cases = df[df['date'] == date]['new_cases'].sum()
     return [new_cases, new_deaths]
