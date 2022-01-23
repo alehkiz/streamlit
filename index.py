@@ -3,9 +3,6 @@ import streamlit as st
 import pandas as pd
 from core import get_dataframe, get_totals, get_new
 from utils import format_date
-import plotly.figure_factory as ff
-import plotly.graph_objects as go
-
 
 df = get_dataframe()
 def populate_metrics(df : pd.DataFrame):
