@@ -26,7 +26,7 @@ if not df is False:
     
     st_contries = st.multiselect(label='Países', options= countries, help='Selecione um ou mais países')
     if not not st_contries:
-        df = df[df['location'].isin(st_contries)]
+        df = df[df['country_pt'].isin(st_contries)]
     df = df.sort_values(by='date', ascending=False)
     populate_metrics(df)
     populate_graphics(df)
