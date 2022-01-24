@@ -52,6 +52,11 @@ def get_file():
        'life_expectancy', 'human_development_index',
        'excess_mortality_cumulative_absolute', 'excess_mortality_cumulative',
        'excess_mortality', 'excess_mortality_cumulative_per_million'], inplace=True)
+    df_country_pt = pd.read_csv('Countries_pt.csv')
+    df_country_pt.set_index('country', inplace=True)
+
+
+    df['country_pt'] = df['location'].apply(lambda value : df_country_pt.loc[value].name_pt)
     df.to_csv(file_folder+file_name, index=False)
     files = [_ for _ in listdir(path='./files/') if not file_name in _]
     if len(files) > 1:
