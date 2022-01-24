@@ -62,7 +62,18 @@ def get_file():
     if len(files) > 1:
         for file in files:
             remove_file(f'./files/{file}')
-
+def add_date_picker(df:pd.DataFrame):
+    countries = df['country_pt'].unique().tolist()
+    st.markdown("""---""")
+    dates = [pd.to_datetime(_).date() for _ in df['date'].unique()]
+    min_value=df.iloc[-1]['date']
+    max_value=df.iloc[0]['date']
+    c1, c2 = st.columns(2)
+    init_date = c1.date_input("Data inicial", min_value)
+    end_date = c2.date_input('Data final', max_value)
+    print(end_date)
+    print(pd.to_datetime(end_date))
+    return df[(df['date'] >= pd.to_datetime(init_date)) & (df['date'] <= pd.to_datetime(end_date))]
 
 def get_dataframe():
     global th
