@@ -58,18 +58,16 @@ def get_file():
 
     df['country_pt'] = df['location'].apply(lambda value : df_country_pt.loc[value].name_pt)
     df.to_csv(file_folder+file_name, index=False)
-    files = [_ for _ in listdir(path='./files/') if not file_name in _]
+    files = [_ for _ in listdir(path=file_folder) if not file_name in _]
     if len(files) > 1:
         for file in files:
-            remove_file(f'./files/{file}')
+            remove_file(f'{file_folder}{file}')
 def add_date_picker(df:pd.DataFrame):
     st.markdown("""---""")
     dates = [pd.to_datetime(_).date().strftime('%Y-%m-%d') for _ in df['date'].unique()]
     min_value=df.iloc[0]['date'].strftime('%Y-%m-%d')
     max_value=df.iloc[-1]['date'].strftime('%Y-%m-%d')
     init_date, end_date = st.select_slider("Selecione", options=dates, value=(min_value, max_value))
-    # print(end_date)
-    # print(pd.to_datetime(end_date))
     return df[(df['date'] >= pd.to_datetime(init_date, format='%Y-%m-%d')) & (df['date'] <= pd.to_datetime(end_date, format='%Y-%m-%d'))]
 
 def get_dataframe():
@@ -77,9 +75,17 @@ def get_dataframe():
     if not isfile(current_file):
         th = threading.Thread(target=get_file, name='Downloader')
         th.start()
-    if len(listdir(path=file_folder)) == 0:
+    n_files = len(listdir(path=file_folder))
+    files = [_ for _ in listdir(path=file_folder) if not file_name in _]
+    if n_files == 0:
         return False
-    file = file_folder + listdir(path=file_folder)[0]
+    elif n_files > 1:
+        for file in files:
+            remove_file(f'{file_folder}{file}')
+    if len(listdir(path=file_folder)) > 0:
+        file = file_folder + listdir(path=file_folder)[0]
+    else:
+        return False
     df = pd.read_csv(file)
     df['date'] = pd.to_datetime(df['date'], format='%Y-%m-%d')
     df.sort_values(by=['date'], inplace=True, ascending=True)

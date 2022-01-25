@@ -20,15 +20,6 @@ hide_menu_style = """
         """
 st.markdown(hide_menu_style, unsafe_allow_html=True)
 
-
-add_selectbox = st.sidebar.selectbox(
-    "How would you like to be contacted?",
-    ("Email", "Home phone", "Mobile phone")
-)
-
-
-
-
 #TODO: Traduzir os nomes dos países
 if not df is False:
     df.fillna(0, inplace=True)
@@ -44,8 +35,3 @@ if not df is False:
 else:
     st.title('Dados sendo carregados...')
     st.button("Atualizar")
-
-    
-
-
-
