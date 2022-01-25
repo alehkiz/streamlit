@@ -35,7 +35,7 @@ if not df is False:
     # st.write('<style>div.st-bf{flex-direction:column;} div.st-ag{font-weight:bold;padding-left:2px;}</style>', unsafe_allow_html=True)
 
     mean = st.radio(
-     "Informe a média diária",
+     "Informe a quantidade de dias para a média diária",
      (7,14,28))
     populate_graphics(df, mean=mean)
 else:
