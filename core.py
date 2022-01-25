@@ -1,3 +1,4 @@
+from attrs import exceptions
 import pandas as pd
 import requests
 import datetime
@@ -7,6 +8,7 @@ from os import listdir, remove as remove_file
 from os.path import isfile
 from utils import format_date
 import streamlit as st
+import plotly.express as px
 
 file_folder = './files/'
 url = 'https://covid.ourworldindata.org/data/owid-covid-data.csv'
@@ -107,20 +109,52 @@ def populate_metrics(df : pd.DataFrame):
     c_new_cases.metric('Novos casos', f'{int(new_cases):,d}'.replace(',','.'),'')
     c_new_deaths.metric('Novas mortes', f'{int(new_deaths):,d}'.replace(',','.'),'')
 
-def populate_graphics(df : pd.DataFrame):
+def populate_graphics(df : pd.DataFrame, mean: int):
+    if isinstance(mean, int):
+        try:
+            mean = int(mean)
+        except Exception as e:
+            mean = 7
     deaths_df = df.groupby(["date"], as_index=False)['new_deaths'].sum()
     deaths_df.set_index('date', inplace=True)
     deaths_df.rename({'new_deaths':'Mortes'}, axis=1, inplace=True)
+    deaths_df['media'] = deaths_df.rolling(mean, min_periods=1).mean().round(0)
+    fig_deaths = px.line(
+        x=deaths_df.index, 
+        y=deaths_df[f'media'], 
+        color=px.Constant(f'{mean} dias'), 
+        labels=dict(y='Total de Mortes', x='Dia', color='Média')
+        )
+    fig_deaths.add_bar(
+        x=deaths_df.index,
+        y=deaths_df['Mortes'],
+        name='Mortes dia'
+    )
+    
+    fig_deaths.update_layout(autosize=True, legend=dict(orientation='h'))
     st.markdown("""---""")
     st.header('Evolução de mortes por dia')
-    st.bar_chart(deaths_df)
+    st.plotly_chart(fig_deaths, use_container_width=True)
     
     cases_df = df.groupby(["date"], as_index=False)['new_cases'].sum()
     cases_df.set_index('date', inplace=True)
     cases_df.rename({'new_cases':'Casos'}, axis=1, inplace=True)
+    cases_df['media'] = cases_df.rolling(mean, min_periods=1).mean().round(0)
+    fig_cases = px.line(
+        x=cases_df.index, 
+        y=cases_df[f'media'], 
+        color=px.Constant(f'{mean} dias'), 
+        labels=dict(y='Total de Casos', x='Dia', color='Média')
+        )
+    fig_cases.add_bar(
+        x=cases_df.index,
+        y=cases_df['Casos'],
+        name='Casos dia'
+    )
+    fig_cases.update_layout(autosize=True, legend=dict(orientation='h'))
     st.markdown("""---""")
     st.header('Evolução de casos por dia')
-    st.bar_chart(cases_df)
+    st.plotly_chart(fig_cases, use_container_width=True)
 
 def get_totals(df : pd.DataFrame, date):
     df = df.sort_values(by='date', ascending=False)

@@ -31,7 +31,13 @@ if not df is False:
     populate_metrics(df)
 
     df = add_date_picker(df)
-    populate_graphics(df)
+    st.write('<style>div.row-widget.stRadio > div{flex-direction:row;justify-content: center;} </style>', unsafe_allow_html=True)
+    # st.write('<style>div.st-bf{flex-direction:column;} div.st-ag{font-weight:bold;padding-left:2px;}</style>', unsafe_allow_html=True)
+
+    mean = st.radio(
+     "Informe a média diária",
+     (7,14,28))
+    populate_graphics(df, mean=mean)
 else:
     st.title('Dados sendo carregados...')
     st.button("Atualizar")
