@@ -1,5 +1,3 @@
-from webbrowser import get
-from attrs import exceptions
 import pandas as pd
 import requests
 import datetime
@@ -30,8 +28,13 @@ def get_file():
     df = df[df['location'] != 'World']
     df = df[~df['continent'].isna()]
     df['date'] = pd.to_datetime(df.date, format='%Y-%m-%d')
-    df.drop(columns=['new_deaths_smoothed', 'total_cases_per_million',
-       'new_cases_per_million', 'new_cases_smoothed_per_million',
+    df = df.sort_values(by='date', ascending=True)
+    if df[df['date'] == df.iloc[-1]['date']]['total_deaths'].sum() == 0 or df[df['date'] == df.iloc[-1]['date']]['total_cases'].sum() == 0:
+        df = df[df['date'] != df.iloc[-1]['date']]
+    df.drop(columns=[
+        'new_deaths_smoothed', 
+        # 'total_cases_per_million','new_cases_per_million', 
+        'new_cases_smoothed_per_million',
     #    'total_deaths_per_million', 'new_deaths_per_million',
        'new_deaths_smoothed_per_million', 'reproduction_rate', 'icu_patients',
        'icu_patients_per_million', 'hosp_patients',
@@ -100,17 +103,25 @@ def populate_metrics(df : pd.DataFrame):
     cases, deaths = get_totals(df, date)
     new_cases, new_deaths = get_new(df, date)
     yesterday_cases, yesterday_deaths = get_new(df, date - datetime.timedelta(days=1))
-    st.header(f'Consolidado')
+    st.title(f'Consolidado')
     c_new_cases, c_new_deaths = st.columns(2)
     st.markdown("""---""")
     c_total_cases, c_total_deaths = st.columns(2)
     c_total_cases.metric("Total de casos", f'{int(cases):,d}'.replace(',','.'), '')
     c_total_deaths.metric("Total de mortos", f'{int(deaths):,d}'.replace(',','.'), '')
-    c_new_cases 
-    c_new_cases.metric('Novos casos', f'{int(new_cases):,d}'.replace(',','.'),f'{round(((new_cases / yesterday_cases) - 1) * 100)}%')
-    c_new_deaths.metric('Novas mortes', f'{int(new_deaths):,d}'.replace(',','.'),f'{round(((new_deaths / yesterday_deaths) - 1) * 100)}%')
+    _perc_new_cases = round(((new_cases / yesterday_cases) - 1) * 100 if yesterday_cases > 0 else new_cases * 100) 
+    c_new_cases.metric('Novos casos', f'{int(new_cases):,d}'.replace(',','.'),f'{_perc_new_cases}%')
+    _perc_new_deaths = round(((new_deaths / yesterday_deaths) - 1) * 100 if yesterday_deaths > 0 else new_deaths * 100)
+    c_new_deaths.metric('Novas mortes', f'{int(new_deaths):,d}'.replace(',','.'),f'{_perc_new_deaths}%')
     
-def populate_graphics(df : pd.DataFrame, days_for_mean: int):
+def populate_diary_evolution(df : pd.DataFrame):
+    st.title(f'Evolução diária')
+    days_for_mean = st.radio(
+            "Informe a quantidade de dias para a média diária",
+            (7,14,28),
+            help='Selecione um valor que apresentará a média móvel, por padrão é 7, mas pode ser 14 ou 28'
+        )
+    st.write('<style>div.row-widget.stRadio > div{flex-direction:row;justify-content: center;} </style>', unsafe_allow_html=True)
     # df = add_date_picker(df)
     if isinstance(days_for_mean, int):
         try:
@@ -178,3 +189,20 @@ def get_new(df : pd.DataFrame, date):
     new_deaths = df[df['date'] == date]['new_deaths'].sum()
     new_cases = df[df['date'] == date]['new_cases'].sum()
     return [new_cases, new_deaths]
+
+def analysis_by_country(df : pd.DataFrame, date):
+    df = df.sort_values(by='date', ascending=True)
+    st.title('Análise dos países')
+    st.markdown('----')
+    col1, col2 = st.columns(2)
+    df = df[df['date'] == date]
+    _cases_by_million = df[['location','new_cases_per_million']].sort_values(by='new_cases_per_million', ascending=False)
+    _cases_by_million.reset_index(drop=True, inplace=True)
+    _cases_by_million.rename({'localtion':'País', 'new_cases_per_million': 'Novos casos'}, axis=1, inplace=True)
+    col1.write('Novos casos por milhão')
+    col1.table(_cases_by_million.head(20))
+    _deaths_by_million = df[['location', 'new_deaths_per_million']].sort_values(by='new_deaths_per_million', ascending=False)
+    _deaths_by_million.reset_index(drop=True, inplace=True)
+    _deaths_by_million.rename({'location': 'País', 'new_deaths_per_million': 'Novas mortes'}, axis=1, inplace=True)
+    col2.write('Novas mortes por milhão')
+    col2.table(_deaths_by_million.head(20))

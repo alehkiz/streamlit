@@ -1,7 +1,6 @@
-from pyparsing import col
 import streamlit as st
 import pandas as pd
-from core import get_dataframe, get_totals, get_new, populate_graphics, populate_metrics, add_date_picker
+from core import analysis_by_country, get_dataframe, get_totals, get_new, populate_diary_evolution, populate_metrics, add_date_picker
 from utils import format_date
 import datetime
 
@@ -26,10 +25,6 @@ if not df is False:
     date = df.iloc[-1]['date'].strftime('%d/%m/%Y')
     print(date)
     st.sidebar.title(f'Dados Covid - Atualizado em {date}')
-
-    
-    
-    
     menu = st.sidebar.selectbox(
      'Selecione a página:',
      ['Consolidado',
@@ -44,15 +39,9 @@ if not df is False:
     if menu == 'Consolidado':
         populate_metrics(df)
     elif menu =='Evolução diária':
-        days_for_mean = st.radio(
-            "Informe a quantidade de dias para a média diária",
-            (7,14,28),
-            help='Selecione um valor que apresentará a média móvel, por padrão é 7, mas pode ser 14 ou 28'
-        )
-        st.write('<style>div.row-widget.stRadio > div{flex-direction:row;justify-content: center;} </style>', unsafe_allow_html=True)
-        populate_graphics(df, days_for_mean=days_for_mean)
+        populate_diary_evolution(df)
     elif menu == 'Análise por páís':
-        ...
+        analysis_by_country(df, date)
     
     st.sidebar.markdown('----')
     st.sidebar.markdown('Dados extraídos de [Our World in Data](https://ourworldindata.org/coronavirus)')
