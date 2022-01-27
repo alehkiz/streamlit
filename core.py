@@ -43,9 +43,9 @@ def get_file():
        'weekly_hosp_admissions_per_million', 'new_tests', 'total_tests',
        'total_tests_per_thousand', 'new_tests_per_thousand',
        'new_tests_smoothed', 'new_tests_smoothed_per_thousand',
-       'positive_rate', 'tests_per_case', 'tests_units', 'total_vaccinations',
+       'positive_rate', 'tests_per_case', 'tests_units',
        'people_vaccinated', 'people_fully_vaccinated', 'total_boosters',
-       'new_vaccinations', 'new_vaccinations_smoothed',
+       'new_vaccinations_smoothed',
        'total_vaccinations_per_hundred', 'people_vaccinated_per_hundred',
        'people_fully_vaccinated_per_hundred', 'total_boosters_per_hundred',
        'new_vaccinations_smoothed_per_million',
@@ -138,6 +138,12 @@ def populate_diary_evolution(df : pd.DataFrame):
     st.header('Evolução de casos por dia')
     st.plotly_chart(graph_cases(df, days_for_mean), use_container_width=True)
 
+    st.markdown("""---""")
+    st.header('Evolução de vacinas por dia')
+    st.plotly_chart(graph_vaccines(df, days_for_mean), use_container_width=True)
+
+    
+
 def graph_deaths(df: pd.DataFrame, days_for_mean: int):
     # df = add_date_picker(df)
     deaths_df = df.groupby(["date"], as_index=False)['new_deaths'].sum()
@@ -177,6 +183,25 @@ def graph_cases(df: pd.DataFrame, days_for_mean: int):
     )
     fig_cases.update_layout(autosize=True, legend=dict(orientation='h'))
     return fig_cases
+def graph_vaccines(df: pd.DataFrame, days_for_mean):
+    vaccines_df = df.groupby(["date"], as_index=False)['new_vaccinations'].sum()
+    vaccines_df.set_index('date', inplace=True)
+    vaccines_df.rename({'new_vaccinations':'Vacinas'}, axis=1, inplace=True)
+    vaccines_df['media'] = vaccines_df.rolling(days_for_mean, min_periods=1).mean().round(0)
+    fig_deaths = px.line(
+        x=vaccines_df.index, 
+        y=vaccines_df[f'media'], 
+        color=px.Constant(f'{days_for_mean} dias'), 
+        labels=dict(y='Média de Vacinas', x='Dia', color='Média')
+        )
+    fig_deaths.add_bar(
+        x=vaccines_df.index,
+        y=vaccines_df['Vacinas'],
+        name='Vacinas dia'
+    )
+    
+    fig_deaths.update_layout(autosize=True, legend=dict(orientation='h'))
+    return fig_deaths
 
 def get_totals(df : pd.DataFrame, date):
     df = df.sort_values(by='date', ascending=False)
