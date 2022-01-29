@@ -98,22 +98,63 @@ def get_dataframe():
     return df
 
 def populate_metrics(df : pd.DataFrame):
-    # df = add_date_picker(df)
+    
     date = df.iloc[-1]['date']
-    cases, deaths = get_totals(df, date)
-    new_cases, new_deaths = get_new(df, date)
-    yesterday_cases, yesterday_deaths = get_new(df, date - datetime.timedelta(days=1))
+    # get totals in three variabless
+    cases, deaths, vaccines = get_totals(df, date)
+    # get news in three variables
+    new_cases, new_deaths, new_vaccines = get_new(df, date)
+    # get news of yeaterday from last date from df
+    yesterday_cases, yesterday_deaths, yesterday_vaccines = get_new(df, date - datetime.timedelta(days=1))
     st.title(f'Consolidado')
-    c_new_cases, c_new_deaths = st.columns(2)
+    c_new_cases, c_new_deaths, c_new_vaccines = st.columns(3)
     st.markdown("""---""")
-    c_total_cases, c_total_deaths = st.columns(2)
+    c_total_cases, c_total_deaths, c_total_vaccines = st.columns(3)
     c_total_cases.metric("Total de casos", f'{int(cases):,d}'.replace(',','.'), '')
     c_total_deaths.metric("Total de mortos", f'{int(deaths):,d}'.replace(',','.'), '')
     _perc_new_cases = round(((new_cases / yesterday_cases) - 1) * 100 if yesterday_cases > 0 else new_cases * 100) 
     c_new_cases.metric('Novos casos', f'{int(new_cases):,d}'.replace(',','.'),f'{_perc_new_cases}%')
     _perc_new_deaths = round(((new_deaths / yesterday_deaths) - 1) * 100 if yesterday_deaths > 0 else new_deaths * 100)
     c_new_deaths.metric('Novas mortes', f'{int(new_deaths):,d}'.replace(',','.'),f'{_perc_new_deaths}%')
+    _perc_new_vaccines = round(((new_vaccines / yesterday_vaccines) - 1) * 100 if yesterday_vaccines > 0 else new_vaccines * 100)
+    c_new_vaccines.metric('Novas vacinas', f'{int(new_vaccines):,d}'.replace(',','.'),f'{_perc_new_vaccines}%')
+    c_total_vaccines.metric('Total vacinas', f'{int(vaccines):,d}'.replace(',','.'),f'')
+
+    head_countries_total_deaths = df.groupby(['country_pt'], as_index=False)['new_deaths'].sum().sort_values(by=['new_deaths'], ascending=False).head(20)
+    head_countries_total_deaths['new_deaths'] = head_countries_total_deaths['new_deaths'].fillna(0.0).astype(int)
+    head_countries_total_deaths.rename({'country_pt': 'Pais', 'new_deaths': 'Total mortes'}, axis=1, inplace=True)
+    head_countries_total_deaths.reset_index(drop=True, inplace=True)
+
+    head_countries_new_deaths = df[df['date'] == date][['country_pt', 'new_deaths']].sort_values(by=['new_deaths'], ascending=False).head(20)
+    head_countries_new_deaths['new_deaths'] = head_countries_new_deaths['new_deaths'].fillna(0.0).astype(int)
+    head_countries_new_deaths.rename({'country_pt': 'Pais', 'new_deaths': 'Total mortes'}, axis=1, inplace=True)
+    head_countries_new_deaths.reset_index(drop=True, inplace=True)
     
+    head_countries_total_cases = df.groupby(['country_pt'], as_index=False)['new_cases'].sum().sort_values(by=['new_cases'], ascending=False).head(20)
+    head_countries_total_cases['new_cases'] = head_countries_total_cases['new_cases'].fillna(0.0).astype(int)
+    head_countries_total_cases.rename({'country_pt': 'Pais', 'new_cases': 'Total de casos'}, axis=1, inplace=True)
+    head_countries_total_cases.reset_index(drop=True, inplace=True)
+    
+    head_countries_new_cases = df[df['date'] == date][['country_pt', 'new_cases']].sort_values(by=['new_cases'], ascending=False).head(20)
+    head_countries_new_cases['new_cases'] = head_countries_new_cases['new_cases'].fillna(0.0).astype(int)
+    head_countries_new_cases.rename({'country_pt': 'Pais', 'new_cases': 'Novos casos'}, axis=1, inplace=True)
+    head_countries_new_cases.reset_index(drop=True, inplace=True)
+    
+    head_deaths_total_table, head_new_deaths_table = st.columns(2)
+
+    head_cases_total_table, head_cases_new_table = st.columns(2)
+
+    head_deaths_total_table.write('Paises com maior número total de mortos')
+    head_deaths_total_table.table(head_countries_total_deaths)
+
+    head_new_deaths_table.write(f'Paises com o maior número de mortes em {date.strftime("%d/%m/%Y")}')
+    head_new_deaths_table.table(head_countries_new_deaths)
+
+    head_cases_total_table.write('Paises com o maior número de casos')
+    head_cases_total_table.table(head_countries_total_cases)
+
+    head_cases_new_table.write(f'Paises com o maiaor número de casos em {date.strftime("%d/%m/%Y")}')
+    head_cases_new_table.table(head_countries_new_cases)
 def populate_diary_evolution(df : pd.DataFrame):
     st.title(f'Evolução diária')
     days_for_mean = st.radio(
@@ -122,7 +163,6 @@ def populate_diary_evolution(df : pd.DataFrame):
             help='Selecione um valor que apresentará a média móvel, por padrão é 7, mas pode ser 14 ou 28'
         )
     st.write('<style>div.row-widget.stRadio > div{flex-direction:row;justify-content: center;} </style>', unsafe_allow_html=True)
-    # df = add_date_picker(df)
     if isinstance(days_for_mean, int):
         try:
             mean = int(days_for_mean)
@@ -207,13 +247,15 @@ def get_totals(df : pd.DataFrame, date):
     df = df.sort_values(by='date', ascending=False)
     total_deaths = df[df['date'] == date]['total_deaths'].sum()
     total_cases = df[df['date'] == date]['total_cases'].sum()
-    return [total_cases, total_deaths]
+    total_vaccines = df[df['date'] == date]['total_vaccinations'].sum()
+    return [total_cases, total_deaths, total_vaccines]
 
 def get_new(df : pd.DataFrame, date):
     df = df.sort_values(by='date', ascending=False)
     new_deaths = df[df['date'] == date]['new_deaths'].sum()
     new_cases = df[df['date'] == date]['new_cases'].sum()
-    return [new_cases, new_deaths]
+    new_vaccines = df[df['date'] == date]['new_vaccinations'].sum()
+    return [new_cases, new_deaths, new_vaccines]
 
 def analysis_by_country(df : pd.DataFrame, date):
     df = df.sort_values(by='date', ascending=True)
@@ -223,11 +265,13 @@ def analysis_by_country(df : pd.DataFrame, date):
     df = df[df['date'] == date]
     _cases_by_million = df[['location','new_cases_per_million']].sort_values(by='new_cases_per_million', ascending=False)
     _cases_by_million.reset_index(drop=True, inplace=True)
+    _cases_by_million['new_cases_per_million'] = _cases_by_million['new_cases_per_million'].fillna(0.0).astype(int)
     _cases_by_million.rename({'localtion':'País', 'new_cases_per_million': 'Novos casos'}, axis=1, inplace=True)
     col1.write('Novos casos por milhão')
     col1.table(_cases_by_million.head(20))
     _deaths_by_million = df[['location', 'new_deaths_per_million']].sort_values(by='new_deaths_per_million', ascending=False)
     _deaths_by_million.reset_index(drop=True, inplace=True)
+    _deaths_by_million['new_deaths_per_million'] = _deaths_by_million['new_deaths_per_million'].fillna(0.0).astype(int)
     _deaths_by_million.rename({'location': 'País', 'new_deaths_per_million': 'Novas mortes'}, axis=1, inplace=True)
     col2.write('Novas mortes por milhão')
     col2.table(_deaths_by_million.head(20))
