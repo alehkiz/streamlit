@@ -185,7 +185,6 @@ def populate_diary_evolution(df : pd.DataFrame):
     
 
 def graph_deaths(df: pd.DataFrame, days_for_mean: int):
-    # df = add_date_picker(df)
     deaths_df = df.groupby(["date"], as_index=False)['new_deaths'].sum()
     deaths_df.set_index('date', inplace=True)
     deaths_df.rename({'new_deaths':'Mortes'}, axis=1, inplace=True)
@@ -263,15 +262,15 @@ def analysis_by_country(df : pd.DataFrame, date):
     st.markdown('----')
     col1, col2 = st.columns(2)
     df = df[df['date'] == date]
-    _cases_by_million = df[['location','new_cases_per_million']].sort_values(by='new_cases_per_million', ascending=False)
-    _cases_by_million.reset_index(drop=True, inplace=True)
-    _cases_by_million['new_cases_per_million'] = _cases_by_million['new_cases_per_million'].fillna(0.0).astype(int)
-    _cases_by_million.rename({'localtion':'País', 'new_cases_per_million': 'Novos casos'}, axis=1, inplace=True)
     col1.write('Novos casos por milhão')
-    col1.table(_cases_by_million.head(20))
-    _deaths_by_million = df[['location', 'new_deaths_per_million']].sort_values(by='new_deaths_per_million', ascending=False)
-    _deaths_by_million.reset_index(drop=True, inplace=True)
-    _deaths_by_million['new_deaths_per_million'] = _deaths_by_million['new_deaths_per_million'].fillna(0.0).astype(int)
-    _deaths_by_million.rename({'location': 'País', 'new_deaths_per_million': 'Novas mortes'}, axis=1, inplace=True)
+    col1.table(convert_df_country(df, 'new_cases_per_million', 'Novos casos').head(20))
     col2.write('Novas mortes por milhão')
-    col2.table(_deaths_by_million.head(20))
+    col2.table(convert_df_country(df, 'new_deaths_per_million', 'Novas mortes') .head(20))
+
+def convert_df_country(df: pd.DataFrame, old_column: str, new_columns: str):
+    df = df[['location', old_column]].sort_values(by=old_column, ascending=False)
+    df.reset_index(drop=True, inplace=True)
+    df[old_column] = df[old_column].fillna(0.0).astype(int)
+    df.rename({'localtion':'País', old_column: new_columns}, axis=1, inplace=True)
+    return df
+
