@@ -158,7 +158,7 @@ def populate_metrics(df : pd.DataFrame):
 def populate_diary_evolution(df : pd.DataFrame):
     st.title(f'Evolução diária')
     days_for_mean = st.radio(
-            "Informe a quantidade de dias para a média diária",
+            "Informe a quantidade de dias para a média móvel",
             (7,14,28),
             help='Selecione um valor que apresentará a média móvel, por padrão é 7, mas pode ser 14 ou 28'
         )
